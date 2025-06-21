@@ -5,7 +5,7 @@ document_root: public
 env_variables:
   APP_NAME: Laravel
   APP_ENV: production
-  APP_KEY: base64:LY/CW6YNQBHnsnRlHuNduaoWWKiiNmKqN3nkvqi9qQU=
+  APP_KEY: base64:5qqsSup9M0ua6m/3zdvceYbvtaaGPXYmFCRfDHhLnNU=
   APP_DEBUG: false
   APP_URL: https://textyapp-83044375023.europe-west1.run.app
   APP_LOCALE: en
