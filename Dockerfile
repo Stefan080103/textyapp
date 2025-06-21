@@ -1,26 +1,45 @@
-# Stage 1: Build assets
-FROM node:18 as node
-WORKDIR /app
-COPY . .
-RUN npm install && npm run build
+# Dockerfile
+FROM php:8.2-apache
 
-# Stage 2: PHP + Composer
-FROM php:8.2-fpm
-WORKDIR /var/www
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev unzip nginx supervisor
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    git \
+    unzip \
+    curl \
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    && docker-php-ext-install pdo pdo_mysql zip
 
 # Install Composer
-COPY --from=node /app /var/www
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN composer install --no-dev --optimize-autoloader
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Nginx config
-COPY ./docker/nginx.conf /etc/nginx/nginx.conf
+# Copy Laravel files
+COPY . .
 
-# Supervisor config to run both PHP-FPM and Nginx
-COPY ./docker/supervisord.conf /etc/supervisord.conf
+# Install Laravel dependencies
+RUN composer install --optimize-autoloader --no-dev
 
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Copy .env if it exists (optional)
+COPY .env.example .env
+
+# Expose port
 EXPOSE 8080
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+
+# Override Apache default port and config
+RUN sed -i 's/80/8080/g' /etc/apache2/ports.conf /etc/apache2/sites-enabled/000-default.conf
+
+# Start Apache
+CMD ["apache2-foreground"]
