@@ -143,4 +143,22 @@ class PostController extends Controller
             return back()->with('error', 'Eroare la adăugarea comentariului.');
         }
     }
+    
+    public function destroy(Post $post)
+    {
+        // Ensure user owns the post
+        if ($post->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        // Delete the image file
+        if (Storage::exists($post->image_path)) {
+            Storage::delete($post->image_path);
+        }
+
+        // Delete post from DB
+        $post->delete();
+
+        return redirect()->back()->with('status', 'Postarea a fost ștearsă.');
+    }
 }

@@ -1,7 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8" x-data="{ zoomImage: null }">
     <!-- Profile Header -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center space-x-6">
@@ -23,7 +25,6 @@
                                         Urmărești
                                     </button>
                                 </form>
-                                
                                 <a href="{{ route('messages.show', $user) }}" 
                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                                     Mesaj
@@ -73,19 +74,32 @@
         <div class="p-6 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Postări</h2>
         </div>
-        
+
         @if($canViewPosts)
             @if($posts->count() > 0)
                 <div class="grid grid-cols-3 gap-1">
                     @foreach($posts as $post)
-                    <div class="aspect-square bg-gray-100">
+                    <div class="relative aspect-square bg-gray-100 group cursor-pointer">
                         <img src="{{ Storage::url($post->image_path) }}" 
                              alt="Post" 
-                             class="w-full h-full object-cover hover:opacity-75 transition-opacity cursor-pointer">
+                             class="w-full h-full object-cover transition-opacity group-hover:opacity-75"
+                             @click="zoomImage = '{{ Storage::url($post->image_path) }}'">
+
+                        @if(auth()->id() === $user->id)
+                        <form action="{{ route('posts.destroy', $post) }}" method="POST" class="absolute top-2 right-2 z-10">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    onclick="return confirm('Sigur dorești să ștergi această postare?')"
+                                    class="bg-red-600 text-white px-2 py-1 text-xs rounded hover:bg-red-700 transition">
+                                Șterge
+                            </button>
+                        </form>
+                        @endif
                     </div>
                     @endforeach
                 </div>
-                
+
                 <div class="p-6">
                     {{ $posts->links() }}
                 </div>
@@ -115,6 +129,15 @@
                 </p>
             </div>
         @endif
+    </div>
+
+    <!-- Zoom Modal -->
+    <div x-show="zoomImage" x-transition
+         class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+         @click.away="zoomImage = null" @keydown.escape.window="zoomImage = null">
+        <img :src="zoomImage" class="max-w-full max-h-screen rounded shadow-lg">
+        <button @click="zoomImage = null"
+                class="absolute top-5 right-5 text-white text-3xl font-bold">&times;</button>
     </div>
 </div>
 @endsection
